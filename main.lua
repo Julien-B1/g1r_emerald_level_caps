@@ -218,6 +218,15 @@ return function(mod)
           mod.log:error("Could not open PC storage: %s", tostring(err))
           return
         end
+        -- Private require: the StartMenu facade is not exposed to Gen 3 mods;
+        -- close its real module so Hud does not dispatch input to a stale open menu after PC exit.
+        local StartMenu = privateModule("src.ui.game3.start_menu", "Start menu cleanup is unavailable")
+        if StartMenu and StartMenu.close then
+          local closeOk, closeErr = pcall(StartMenu.close, true)
+          if not closeOk then
+            mod.log:warn("Could not close START after opening PC storage: %s", tostring(closeErr))
+          end
+        end
       end,
     })
     return out

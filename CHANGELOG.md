@@ -3,6 +3,12 @@
 Format: [keep a changelog](https://keepachangelog.com/en/1.1.0/).
 Version headings match `manifest.json`'s `version`.
 
+## [0.1.4] - 2026-10-01
+
+### Fixed
+
+- Close the Gen 3 START menu after opening PC storage so it cannot remain stacked behind the PC or receive stale input after B closes it.
+
 ## [0.1.3] - 2026-10-01
 
 ### Fixed
