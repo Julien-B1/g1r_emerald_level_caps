@@ -1,0 +1,24 @@
+return {
+  summary = "Ordered boss parties, field PC storage, and optional Emerald level caps.",
+  author = "Community",
+  tags = { "mechanic", "quality-of-life", "emerald" },
+  differences = {
+    changed = {
+      "Boss encounters can use a player-selected party and lead order",
+      "START gains direct access to Pokémon storage outside the League",
+      "Optional EXP and Rare Candy level caps follow progression milestones",
+    },
+    added = {
+      "Four independently configurable features",
+    },
+    known = {
+      "Unselected held Exp. Share recipients do not receive battle experience",
+      "Daycare, trades, and received Pokémon can exceed the level cap",
+      "The Space Center multi battle keeps its vanilla party-selection flow",
+    },
+  },
+  credits = {
+    { who = "Gen1Recomp contributors", for_ = "mod API and test infrastructure" },
+  },
+  compat = { engine = ">=0.0.0 <2.0.0", modApi = 2 },
+}
