@@ -47,6 +47,7 @@ local BOSSES = {
 }
 
 local BOSS_BY_ID = {}
+local BOSS_RULES_LAYER = "g1r_emerald_boss_rules"
 for _, boss in ipairs(BOSSES) do
   for _, trainerId in ipairs(boss.ids) do
     BOSS_BY_ID[trainerId] = boss
@@ -140,6 +141,7 @@ return function(mod)
     return value
   end
 
+  local openBossRules
   local currentMap
   mod.events:on("map.entered", function(ev)
     currentMap = ev and ev.mapId or nil
@@ -184,7 +186,7 @@ return function(mod)
       id = "boss_rules",
       label = "BOSS RULES",
       onSelect = function(selectedGame, selectedSession)
-        mod.ui.push(selectedGame or game, "EmeraldBossRules")
+        if openBossRules then openBossRules(selectedGame or game) end
       end,
     })
     table.insert(out, saveIndex + 1, {
@@ -216,7 +218,6 @@ return function(mod)
           mod.log:error("Could not open PC storage: %s", tostring(err))
           return
         end
-        require("src.ui.StartMenu").close(true)
       end,
     })
     return out
@@ -261,27 +262,62 @@ return function(mod)
     return false
   end
 
-  mod.content.screens:register("EmeraldBossRules", {
-    new = function(game)
-      local Flags = privateModule("src.core.game3.scripting.flags", "Boss progress is unavailable")
-      local Space = privateModule("src.core.game3.scripting.space", "Boss progress is unavailable")
-      local rows
-      if Flags and Space and Space.store then
-        rows = summaryRows(function(boss)
-          return isDefeated(boss, Flags, Space.store)
-        end, mod.options:get("level_caps"))
-      else
-        rows = {
-          { label = "CURRENT LEVEL CAP", right = "UNKNOWN" },
-          { label = "BOSS PROGRESSION", right = "UNAVAILABLE" },
-        }
+  openBossRules = function(game)
+    -- Private require: Gen 3 has no content.screens target; its modals are pushed on this stack.
+    local Stack = privateModule("src.ui.game3.stack", "Boss summary screen is unavailable")
+    -- Private require: mod.ui.ListMenu uses the Gen 1 layout, while Emerald needs its 240x160 list widget.
+    local ListMenu = privateModule("src.ui.game3.list_menu", "Boss summary list is unavailable")
+    -- Private require: the Gen 3 list widget uses the engine's FRLG window and font renderer.
+    local Window = privateModule("src.ui.game3.window", "Boss summary frame is unavailable")
+    local Flags = privateModule("src.core.game3.scripting.flags", "Boss progress is unavailable")
+    local Space = privateModule("src.core.game3.scripting.space", "Boss progress is unavailable")
+    if not (Stack and ListMenu and Window) then return end
+
+    local rows
+    if Flags and Space and Space.store then
+      rows = summaryRows(function(boss)
+        return isDefeated(boss, Flags, Space.store)
+      end, mod.options:get("level_caps"))
+    else
+      rows = {
+        { label = "CURRENT LEVEL CAP", right = "UNKNOWN" },
+        { label = "BOSS PROGRESSION", right = "UNAVAILABLE" },
+      }
+    end
+    for _, row in ipairs(rows) do
+      local label, right = row.label, row.right
+      row.print = function(item, x, y)
+        Window.printPx(label, x, y, { maxWidth = 136 })
+        Window.printPx(right, 170, y, { maxWidth = 56 })
       end
-      return mod.ui.ListMenu.new(game, "BOSS RULES", rows, {
-        pageJump = true,
-        onChoose = function(_, menu) menu:close() end,
-      })
-    end,
-  })
+    end
+
+    local list = ListMenu.new({
+      template = Window.template(2, 7, 26, 12),
+      frame = "none",
+      items = rows,
+      maxShowed = 6,
+      itemX = 8,
+      cursorX = 0,
+      upTextY = 0,
+      rowHeight = 16,
+      scrollMultiple = "dpad",
+      onSelect = function() end,
+      onCancel = function() Stack.pop(BOSS_RULES_LAYER) end,
+    })
+    local screen = {
+      update = function(_, dt) list:update(dt) end,
+      handleInput = function(_, input) list:handleInput(input) end,
+      draw = function()
+        Window.fill(Window.template(0, 0, 30, 20), 0, 0, 0, 1)
+        Window.fixedStdFrame(Window.template(2, 3, 26, 2))
+        Window.print("BOSS RULES", 4, 4)
+        Window.fixedStdFrame(Window.template(2, 7, 26, 12))
+        list:draw()
+      end,
+    }
+    Stack.push(BOSS_RULES_LAYER, screen, { hideBelow = true, fullscreen = true })
+  end
 
   local function currentLevelCap(Flags, store)
     return capFromDefeated(function(boss)

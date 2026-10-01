@@ -137,6 +137,23 @@ local pcMenuOptions
 stubModule("src.ui.game3.pc_menu", {
   show = function(opts) pcMenuOptions = opts end,
 })
+local openedBossRules
+stubModule("src.ui.game3.stack", {
+  push = function(id, screen) openedBossRules = { id = id, screen = screen } end,
+  pop = function() end,
+})
+stubModule("src.ui.game3.list_menu", {
+  new = function(opts) return opts end,
+})
+stubModule("src.ui.game3.window", {
+  template = function(left, top, width, height)
+    return { left = left, top = top, w = width, h = height }
+  end,
+  fill = function() end,
+  fixedStdFrame = function() end,
+  print = function() end,
+  printPx = function() end,
+})
 stubModule("src.core.game3.audio", { playSe = function() end })
 stubModule("src.core.game3.se_ids", { resolve = function(id) return id end })
 local startRows = Runtime.call("ui.start_menu.items", function(_, items)
@@ -147,6 +164,11 @@ end, { save = { position = { map = "Route101" } } }, {
 })
 T.eq(startRows[2].id, "boss_rules", "the boss summary panel is inserted before SAVE")
 T.eq(startRows[3].id, "pc_anywhere", "PC storage is inserted before SAVE")
+startRows[2].onSelect({}, sessionForHooks)
+T.eq(openedBossRules and openedBossRules.id, "g1r_emerald_boss_rules",
+  "the summary entry pushes a Gen 3 modal layer")
+T.eq(openedBossRules and openedBossRules.screen.draw ~= nil, true,
+  "the summary panel supplies a draw callback")
 startRows[3].onSelect({}, sessionForHooks)
 T.check(pcMenuOptions and pcMenuOptions.session == sessionForHooks,
   "PC menu action opens storage for the active session")
