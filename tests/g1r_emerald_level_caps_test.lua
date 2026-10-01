@@ -134,8 +134,19 @@ stubModule("src.core.game3.runtime", {
 
 Runtime.emit("map.entered", { mapId = "Route101" })
 local pcMenuOptions
+local pcFlow = {}
 stubModule("src.ui.game3.pc_menu", {
-  show = function(opts) pcMenuOptions = opts end,
+  show = function(opts)
+    pcMenuOptions = opts
+    pcFlow[#pcFlow + 1] = "pc"
+  end,
+})
+local startMenuClosed = false
+stubModule("src.ui.game3.start_menu", {
+  close = function(silent)
+    startMenuClosed = silent == true
+    pcFlow[#pcFlow + 1] = "start"
+  end,
 })
 local openedBossRules
 stubModule("src.ui.game3.stack", {
@@ -190,6 +201,9 @@ T.check(pcMenuOptions and pcMenuOptions.session == sessionForHooks,
   "PC menu action opens storage for the active session")
 T.eq(pcMenuOptions and pcMenuOptions.startMode, "storage",
   "PC shortcut goes directly to Pokémon storage")
+T.check(startMenuClosed, "START is closed after the PC storage menu opens")
+T.eq(table.concat(pcFlow, ","), "pc,start",
+  "START is not closed before successful PC opening")
 Runtime.emit("map.entered", { mapId = "EverGrandeCity_PokemonLeague_1F" })
 local leagueRows = Runtime.call("ui.start_menu.items", function(_, items)
   return items
