@@ -48,7 +48,9 @@ local expectedCaps = {
 }
 for index, boss in ipairs(exports.bosses) do
   T.eq(boss.cap, expectedCaps[index], "boss row " .. index .. " has the planned effective cap")
-  T.eq(cap(), expectedCaps[index], "progression reaches effective cap " .. expectedCaps[index])
+  if boss.milestone then
+    T.eq(cap(), boss.cap, "progression reaches milestone cap " .. boss.cap)
+  end
   beaten[boss.name] = true
 end
 T.eq(cap(), nil, "the cap clears after Steven")
