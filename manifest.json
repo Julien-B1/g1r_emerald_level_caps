@@ -1,0 +1,18 @@
+{
+  "id": "g1r_emerald_level_caps",
+  "name": "Emerald Boss Rules",
+  "version": "0.1.0",
+  "api": 2,
+  "entry": "main.lua",
+  "profile": "overhaul",
+  "category": "MECHANIC",
+  "games": ["emerald"],
+  "game_version": ">=0.0.0-0 <2.0.0",
+  "github": "Julien-B1/g1r_emerald_level_caps",
+  "permissions": ["engine_internals"],
+  "priority": 100,
+  "dependencies": [],
+  "optional_dependencies": [],
+  "conflicts": [],
+  "description": "Adds configurable PC access, boss party selection, and Emerald level caps."
+}
