@@ -213,7 +213,11 @@ return function(mod)
           require("src.core.game3.audio").playSe(
             require("src.core.game3.se_ids").resolve("SE_PC_ON"))
         end)
-        local ok, err = pcall(PcMenu.show, { session = session, startMode = "storage" })
+        local ok, err = pcall(PcMenu.show, {
+          session = session,
+          startMode = "storage",
+          closeOnExit = true,
+        })
         if not ok then
           mod.log:error("Could not open PC storage: %s", tostring(err))
           return
