@@ -47,6 +47,7 @@ local BOSSES = {
 }
 
 local BOSS_BY_ID = {}
+local BOSS_RULES_LAYER = "g1r_emerald_boss_rules"
 for _, boss in ipairs(BOSSES) do
   for _, trainerId in ipairs(boss.ids) do
     BOSS_BY_ID[trainerId] = boss
@@ -58,6 +59,33 @@ local function capFromDefeated(isDefeated)
     if boss.milestone and not isDefeated(boss) then return boss.cap end
   end
   return nil
+end
+
+local function summaryRows(isDefeated, enabled)
+  local nextBoss
+  for _, boss in ipairs(BOSSES) do
+    if boss.milestone and not isDefeated(boss) then
+      nextBoss = boss
+      break
+    end
+  end
+
+  local rows = {
+    { label = "CURRENT LEVEL CAP", right = nextBoss and ("Lv. " .. nextBoss.cap) or "NONE" },
+    { label = "CAP ENFORCEMENT", right = enabled and "ON" or "OFF" },
+    { label = "NEXT MILESTONE", right = nextBoss and nextBoss.name or "All milestones cleared" },
+  }
+  for _, boss in ipairs(BOSSES) do
+    if boss.milestone then
+      local state = isDefeated(boss) and "CLEARED"
+        or (boss == nextBoss and "NEXT" or "LOCKED")
+      rows[#rows + 1] = {
+        label = boss.name .. " (Lv. " .. boss.cap .. ")",
+        right = state,
+      }
+    end
+  end
+  return rows
 end
 
 local function applyPartyOrder(session, order)
@@ -92,6 +120,7 @@ return function(mod)
   })
   mod.exports.bosses = BOSSES
   mod.exports.capFromDefeated = capFromDefeated
+  mod.exports.summaryRows = summaryRows
   mod.exports.applyPartyOrder = applyPartyOrder
   mod.exports.restorePartySnapshot = restorePartySnapshot
 
@@ -112,6 +141,7 @@ return function(mod)
     return value
   end
 
+  local openBossRules
   local currentMap
   mod.events:on("map.entered", function(ev)
     currentMap = ev and ev.mapId or nil
@@ -153,21 +183,41 @@ return function(mod)
     if not saveIndex then return out end
 
     table.insert(out, saveIndex, {
+      id = "boss_rules",
+      label = "BOSS RULES",
+      onSelect = function(selectedGame, selectedSession)
+        if openBossRules then openBossRules(selectedGame or game) end
+      end,
+    })
+    table.insert(out, saveIndex + 1, {
       id = "pc_anywhere",
       label = "PC",
       onSelect = function(selectedGame, selectedSession)
-        require("src.ui.StartMenu").close(true)
         -- Private require: the public BoxMenu facade always opens the root PC menu;
         -- startMode=storage is needed to keep the player's item PC inaccessible (cf. src/ui/game3/pc_menu.lua).
         local PcMenu = privateModule("src.ui.game3.pc_menu", "Storage PC is unavailable")
         if not PcMenu then return end
+        local session = selectedSession
+        if not session then
+          -- Private require: a field menu should carry its session, but older starts may omit it.
+          local Runtime = privateModule("src.core.game3.runtime", "Current save is unavailable")
+          session = Runtime and Runtime.getSession and Runtime.getSession() or nil
+        end
+        if not session then
+          mod.log:warn("Could not open PC storage because the active save is unavailable")
+          return
+        end
         -- Private require: opening the storage submenu directly bypasses Hud.openPc,
         -- which normally owns the PC-on sound (cf. src/ui/game3/hud.lua).
         pcall(function()
           require("src.core.game3.audio").playSe(
             require("src.core.game3.se_ids").resolve("SE_PC_ON"))
         end)
-        PcMenu.show({ session = selectedSession, startMode = "storage" })
+        local ok, err = pcall(PcMenu.show, { session = session, startMode = "storage" })
+        if not ok then
+          mod.log:error("Could not open PC storage: %s", tostring(err))
+          return
+        end
       end,
     })
     return out
@@ -210,6 +260,63 @@ return function(mod)
       if Flags.getFlag(store, ctx, flagId) then return true end
     end
     return false
+  end
+
+  openBossRules = function(game)
+    -- Private require: Gen 3 has no content.screens target; its modals are pushed on this stack.
+    local Stack = privateModule("src.ui.game3.stack", "Boss summary screen is unavailable")
+    -- Private require: mod.ui.ListMenu uses the Gen 1 layout, while Emerald needs its 240x160 list widget.
+    local ListMenu = privateModule("src.ui.game3.list_menu", "Boss summary list is unavailable")
+    -- Private require: the Gen 3 list widget uses the engine's FRLG window and font renderer.
+    local Window = privateModule("src.ui.game3.window", "Boss summary frame is unavailable")
+    local Flags = privateModule("src.core.game3.scripting.flags", "Boss progress is unavailable")
+    local Space = privateModule("src.core.game3.scripting.space", "Boss progress is unavailable")
+    if not (Stack and ListMenu and Window) then return end
+
+    local rows
+    if Flags and Space and Space.store then
+      rows = summaryRows(function(boss)
+        return isDefeated(boss, Flags, Space.store)
+      end, mod.options:get("level_caps"))
+    else
+      rows = {
+        { label = "CURRENT LEVEL CAP", right = "UNKNOWN" },
+        { label = "BOSS PROGRESSION", right = "UNAVAILABLE" },
+      }
+    end
+    for _, row in ipairs(rows) do
+      local label, right = row.label, row.right
+      row.print = function(item, x, y)
+        Window.printPx(label, x, y, { maxWidth = 136 })
+        Window.printPx(right, 170, y, { maxWidth = 56 })
+      end
+    end
+
+    local list = ListMenu.new({
+      template = Window.template(2, 7, 26, 12),
+      frame = "none",
+      items = rows,
+      maxShowed = 6,
+      itemX = 8,
+      cursorX = 0,
+      upTextY = 0,
+      rowHeight = 16,
+      scrollMultiple = "dpad",
+      onSelect = function() end,
+      onCancel = function() Stack.pop(BOSS_RULES_LAYER) end,
+    })
+    local screen = {
+      update = function(_, dt) list:update(dt) end,
+      handleInput = function(_, input) list:handleInput(input) end,
+      draw = function()
+        Window.fill(Window.template(0, 0, 30, 20), 0, 0, 0, 1)
+        Window.fixedStdFrame(Window.template(2, 3, 26, 2))
+        Window.print("BOSS RULES", 4, 4)
+        Window.fixedStdFrame(Window.template(2, 7, 26, 12))
+        list:draw()
+      end,
+    }
+    Stack.push(BOSS_RULES_LAYER, screen, { hideBelow = true, fullscreen = true })
   end
 
   local function currentLevelCap(Flags, store)
@@ -391,7 +498,7 @@ return function(mod)
     local targetExp = SummaryData.expForLevel(growthRate, cap)
     local remaining = math.max(0, targetExp - (tonumber(mon.exp) or 0))
     return math.min(math.max(0, tonumber(amount) or 0), remaining)
-  end)
+  end, 10000)
 
   mod.hooks:wrap("item.use", function(next, game, _unused, itemId, partySlot, bag)
     if not mod.options:get("level_caps") or tonumber(itemId) ~= 68 then

@@ -3,6 +3,17 @@
 Format: [keep a changelog](https://keepachangelog.com/en/1.1.0/).
 Version headings match `manifest.json`'s `version`.
 
+## [0.1.1] - 2026-10-01
+
+### Fixed
+
+- Apply the level-cap clamp after other experience multipliers, including EXP QoL x100.
+- Keep START open unless the direct Pokémon storage menu opens successfully.
+
+### Added
+
+- A START-menu boss rules panel showing the current cap and milestone progress.
+
 ## [0.1.0] - 2026-10-01
 
 ### Added
