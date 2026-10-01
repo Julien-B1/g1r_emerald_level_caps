@@ -3,6 +3,16 @@
 Format: [keep a changelog](https://keepachangelog.com/en/1.1.0/).
 Version headings match `manifest.json`'s `version`.
 
+## [0.1.2] - 2026-10-01
+
+### Fixed
+
+- Forward Gen 3 layer input with the correct callback signature so CAPS accepts navigation and cancel.
+
+### Changed
+
+- Rename the mod to 3G Level Caps and its START summary entry to CAPS.
+
 ## [0.1.1] - 2026-10-01
 
 ### Fixed

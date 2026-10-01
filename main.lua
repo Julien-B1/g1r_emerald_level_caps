@@ -184,7 +184,7 @@ return function(mod)
 
     table.insert(out, saveIndex, {
       id = "boss_rules",
-      label = "BOSS RULES",
+      label = "CAPS",
       onSelect = function(selectedGame, selectedSession)
         if openBossRules then openBossRules(selectedGame or game) end
       end,
@@ -306,12 +306,12 @@ return function(mod)
       onCancel = function() Stack.pop(BOSS_RULES_LAYER) end,
     })
     local screen = {
-      update = function(_, dt) list:update(dt) end,
-      handleInput = function(_, input) list:handleInput(input) end,
+      update = function(dt) list:update(dt) end,
+      handleInput = function(input) list:handleInput(input) end,
       draw = function()
         Window.fill(Window.template(0, 0, 30, 20), 0, 0, 0, 1)
         Window.fixedStdFrame(Window.template(2, 3, 26, 2))
-        Window.print("BOSS RULES", 4, 4)
+        Window.print("CAPS", 4, 4)
         Window.fixedStdFrame(Window.template(2, 7, 26, 12))
         list:draw()
       end,

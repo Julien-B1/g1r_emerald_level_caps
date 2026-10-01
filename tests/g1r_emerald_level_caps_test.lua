@@ -142,8 +142,15 @@ stubModule("src.ui.game3.stack", {
   push = function(id, screen) openedBossRules = { id = id, screen = screen } end,
   pop = function() end,
 })
+local forwardedBossRulesInput
 stubModule("src.ui.game3.list_menu", {
-  new = function(opts) return opts end,
+  new = function(opts)
+    return {
+      update = function() end,
+      draw = function() end,
+      handleInput = function(_, input) forwardedBossRulesInput = input end,
+    }
+  end,
 })
 stubModule("src.ui.game3.window", {
   template = function(left, top, width, height)
@@ -162,13 +169,17 @@ end, { save = { position = { map = "Route101" } } }, {
   { id = "pokemon", label = "POKéMON" },
   { id = "save", label = "SAVE" },
 })
-T.eq(startRows[2].id, "boss_rules", "the boss summary panel is inserted before SAVE")
+T.eq(startRows[2].id, "boss_rules", "the CAPS panel is inserted before SAVE")
 T.eq(startRows[3].id, "pc_anywhere", "PC storage is inserted before SAVE")
 startRows[2].onSelect({}, sessionForHooks)
 T.eq(openedBossRules and openedBossRules.id, "g1r_emerald_boss_rules",
   "the summary entry pushes a Gen 3 modal layer")
 T.eq(openedBossRules and openedBossRules.screen.draw ~= nil, true,
   "the summary panel supplies a draw callback")
+local panelInput = { wasPressed = function() return true end }
+openedBossRules.screen.handleInput(panelInput)
+T.check(forwardedBossRulesInput == panelInput,
+  "the summary panel forwards the input passed by the Gen 3 dispatcher")
 startRows[3].onSelect({}, sessionForHooks)
 T.check(pcMenuOptions and pcMenuOptions.session == sessionForHooks,
   "PC menu action opens storage for the active session")
