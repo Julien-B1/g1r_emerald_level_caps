@@ -1,5 +1,5 @@
 return {
-  summary = "Ordered boss parties, field PC storage, and optional Emerald level caps.",
+  summary = "Boss parties, storage PC, level caps, and an Emerald progression summary.",
   author = "Community",
   tags = { "mechanic", "quality-of-life", "emerald" },
   differences = {
@@ -7,6 +7,7 @@ return {
       "Boss encounters can use a player-selected party and lead order",
       "START gains direct access to Pokémon storage outside the League",
       "Optional EXP and Rare Candy level caps follow progression milestones",
+      "START includes a boss level-cap and progression summary panel",
     },
     added = {
       "Four independently configurable features",

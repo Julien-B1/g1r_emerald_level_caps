@@ -37,6 +37,12 @@ for _, trainerId in ipairs(expectedIds) do
   actualIds[trainerId] = nil
 end
 T.eq(next(actualIds), nil, "the boss table has no unlisted trainer IDs")
+local summary = exports.summaryRows(function(boss)
+  return boss.name == "Route 103 Rival"
+end, false)
+T.eq(summary[1].right, "Lv. 15", "the summary panel reports the current cap")
+T.eq(summary[2].right, "OFF", "the summary panel reports whether caps are enforced")
+T.eq(summary[3].right, "Roxanne", "the summary panel identifies the next milestone")
 
 local beaten = {}
 local function cap()
@@ -127,13 +133,25 @@ stubModule("src.core.game3.runtime", {
 })
 
 Runtime.emit("map.entered", { mapId = "Route101" })
+local pcMenuOptions
+stubModule("src.ui.game3.pc_menu", {
+  show = function(opts) pcMenuOptions = opts end,
+})
+stubModule("src.core.game3.audio", { playSe = function() end })
+stubModule("src.core.game3.se_ids", { resolve = function(id) return id end })
 local startRows = Runtime.call("ui.start_menu.items", function(_, items)
   return items
 end, { save = { position = { map = "Route101" } } }, {
   { id = "pokemon", label = "POKéMON" },
   { id = "save", label = "SAVE" },
 })
-T.eq(startRows[2].id, "pc_anywhere", "PC storage is inserted before SAVE")
+T.eq(startRows[2].id, "boss_rules", "the boss summary panel is inserted before SAVE")
+T.eq(startRows[3].id, "pc_anywhere", "PC storage is inserted before SAVE")
+startRows[3].onSelect({}, sessionForHooks)
+T.check(pcMenuOptions and pcMenuOptions.session == sessionForHooks,
+  "PC menu action opens storage for the active session")
+T.eq(pcMenuOptions and pcMenuOptions.startMode, "storage",
+  "PC shortcut goes directly to Pokémon storage")
 Runtime.emit("map.entered", { mapId = "EverGrandeCity_PokemonLeague_1F" })
 local leagueRows = Runtime.call("ui.start_menu.items", function(_, items)
   return items
@@ -198,6 +216,16 @@ local experience = Runtime.call("exp.gain", function() return 250 end, {
   mon = { level = 4, exp = 450, growthRate = 0 },
 })
 T.eq(experience, 50, "EXP is clamped to the exact first level-cap threshold")
+local removeExpMultiplier = Runtime.hooks:wrap("exp.gain", function(next, ctx)
+  return math.floor(next(ctx) * 100)
+end, 0, "exp_qol")
+local multipliedExperience = Runtime.call("exp.gain", function() return 250 end, {
+  mon = { level = 4, exp = 450, growthRate = 0 },
+  battle = { session = { options = { expQolMultiplier = 100 } } },
+})
+T.eq(multipliedExperience, 50,
+  "an EXP QoL x100 multiplier cannot push a gain beyond the current cap")
+removeExpMultiplier()
 local blockedExperience = Runtime.call("exp.gain", function() return 250 end, {
   mon = { level = 5, exp = 500, growthRate = 0 },
 })

@@ -60,6 +60,33 @@ local function capFromDefeated(isDefeated)
   return nil
 end
 
+local function summaryRows(isDefeated, enabled)
+  local nextBoss
+  for _, boss in ipairs(BOSSES) do
+    if boss.milestone and not isDefeated(boss) then
+      nextBoss = boss
+      break
+    end
+  end
+
+  local rows = {
+    { label = "CURRENT LEVEL CAP", right = nextBoss and ("Lv. " .. nextBoss.cap) or "NONE" },
+    { label = "CAP ENFORCEMENT", right = enabled and "ON" or "OFF" },
+    { label = "NEXT MILESTONE", right = nextBoss and nextBoss.name or "All milestones cleared" },
+  }
+  for _, boss in ipairs(BOSSES) do
+    if boss.milestone then
+      local state = isDefeated(boss) and "CLEARED"
+        or (boss == nextBoss and "NEXT" or "LOCKED")
+      rows[#rows + 1] = {
+        label = boss.name .. " (Lv. " .. boss.cap .. ")",
+        right = state,
+      }
+    end
+  end
+  return rows
+end
+
 local function applyPartyOrder(session, order)
   local snapshot = {
     session = session,
@@ -92,6 +119,7 @@ return function(mod)
   })
   mod.exports.bosses = BOSSES
   mod.exports.capFromDefeated = capFromDefeated
+  mod.exports.summaryRows = summaryRows
   mod.exports.applyPartyOrder = applyPartyOrder
   mod.exports.restorePartySnapshot = restorePartySnapshot
 
@@ -153,21 +181,42 @@ return function(mod)
     if not saveIndex then return out end
 
     table.insert(out, saveIndex, {
+      id = "boss_rules",
+      label = "BOSS RULES",
+      onSelect = function(selectedGame, selectedSession)
+        mod.ui.push(selectedGame or game, "EmeraldBossRules")
+      end,
+    })
+    table.insert(out, saveIndex + 1, {
       id = "pc_anywhere",
       label = "PC",
       onSelect = function(selectedGame, selectedSession)
-        require("src.ui.StartMenu").close(true)
         -- Private require: the public BoxMenu facade always opens the root PC menu;
         -- startMode=storage is needed to keep the player's item PC inaccessible (cf. src/ui/game3/pc_menu.lua).
         local PcMenu = privateModule("src.ui.game3.pc_menu", "Storage PC is unavailable")
         if not PcMenu then return end
+        local session = selectedSession
+        if not session then
+          -- Private require: a field menu should carry its session, but older starts may omit it.
+          local Runtime = privateModule("src.core.game3.runtime", "Current save is unavailable")
+          session = Runtime and Runtime.getSession and Runtime.getSession() or nil
+        end
+        if not session then
+          mod.log:warn("Could not open PC storage because the active save is unavailable")
+          return
+        end
         -- Private require: opening the storage submenu directly bypasses Hud.openPc,
         -- which normally owns the PC-on sound (cf. src/ui/game3/hud.lua).
         pcall(function()
           require("src.core.game3.audio").playSe(
             require("src.core.game3.se_ids").resolve("SE_PC_ON"))
         end)
-        PcMenu.show({ session = selectedSession, startMode = "storage" })
+        local ok, err = pcall(PcMenu.show, { session = session, startMode = "storage" })
+        if not ok then
+          mod.log:error("Could not open PC storage: %s", tostring(err))
+          return
+        end
+        require("src.ui.StartMenu").close(true)
       end,
     })
     return out
@@ -211,6 +260,28 @@ return function(mod)
     end
     return false
   end
+
+  mod.content.screens:register("EmeraldBossRules", {
+    new = function(game)
+      local Flags = privateModule("src.core.game3.scripting.flags", "Boss progress is unavailable")
+      local Space = privateModule("src.core.game3.scripting.space", "Boss progress is unavailable")
+      local rows
+      if Flags and Space and Space.store then
+        rows = summaryRows(function(boss)
+          return isDefeated(boss, Flags, Space.store)
+        end, mod.options:get("level_caps"))
+      else
+        rows = {
+          { label = "CURRENT LEVEL CAP", right = "UNKNOWN" },
+          { label = "BOSS PROGRESSION", right = "UNAVAILABLE" },
+        }
+      end
+      return mod.ui.ListMenu.new(game, "BOSS RULES", rows, {
+        pageJump = true,
+        onChoose = function(_, menu) menu:close() end,
+      })
+    end,
+  })
 
   local function currentLevelCap(Flags, store)
     return capFromDefeated(function(boss)
@@ -391,7 +462,7 @@ return function(mod)
     local targetExp = SummaryData.expForLevel(growthRate, cap)
     local remaining = math.max(0, targetExp - (tonumber(mon.exp) or 0))
     return math.min(math.max(0, tonumber(amount) or 0), remaining)
-  end)
+  end, 10000)
 
   mod.hooks:wrap("item.use", function(next, game, _unused, itemId, partySlot, bag)
     if not mod.options:get("level_caps") or tonumber(itemId) ~= 68 then
