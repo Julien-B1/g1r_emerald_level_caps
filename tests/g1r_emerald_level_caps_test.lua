@@ -201,6 +201,8 @@ T.check(pcMenuOptions and pcMenuOptions.session == sessionForHooks,
   "PC menu action opens storage for the active session")
 T.eq(pcMenuOptions and pcMenuOptions.startMode, "storage",
   "PC shortcut goes directly to Pokémon storage")
+T.eq(pcMenuOptions and pcMenuOptions.closeOnExit, true,
+  "B closes the direct storage shortcut instead of reopening the PC root")
 T.check(startMenuClosed, "START is closed after the PC storage menu opens")
 T.eq(table.concat(pcFlow, ","), "pc,start",
   "START is not closed before successful PC opening")

@@ -3,6 +3,12 @@
 Format: [keep a changelog](https://keepachangelog.com/en/1.1.0/).
 Version headings match `manifest.json`'s `version`.
 
+## [0.1.5] - 2026-10-01
+
+### Fixed
+
+- B closes the direct PC storage shortcut instead of returning to the unused PC root menu.
+
 ## [0.1.4] - 2026-10-01
 
 ### Fixed
