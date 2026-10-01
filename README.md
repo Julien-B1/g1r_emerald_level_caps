@@ -1,4 +1,4 @@
-# Emerald Boss Rules
+# 3G Level Caps
 
 This mod adds PC storage access, ordered party selection before major Emerald boss fights, an optional automatic level cap, and a START-menu progression summary. **Persona: the Challenge Tuner.**
 
@@ -26,7 +26,7 @@ $env:GEN1RECOMP_ROOT = "gen1recomp"; $env:G1R_EMERALD_LEVEL_CAPS_MOD_PATH = "mod
 
 Pull requests targeting `main` or `master` run the test, strict validation, lint, and package checks. Merging a pull request into `main` publishes a tagged GitHub Release with an installable ZIP. The first release uses `0.1.0`; later merged PRs automatically increment the patch version.
 
-Enable **Emerald Boss Rules** in F10. Options are **PC ANYWHERE** (on), **DISABLE PC IN LEAGUE** (on), **BOSS PARTY SELECTION** (on), and **AUTOMATIC LEVEL CAPS** (off). **BOSS RULES** in START shows the current cap, enforcement status, and milestone progression. The PC shortcut opens directly to Pokémon storage; the player's item PC is intentionally unavailable. During selection, the first chosen Pokémon leads. B's cancel confirmation falls back to the current healthy party order, truncated to the opponent's party size. Double battles require two selected Pokémon. The Space Center multi battle keeps its vanilla party-selection flow.
+Enable **3G Level Caps** in F10. Options are **PC ANYWHERE** (on), **DISABLE PC IN LEAGUE** (on), **BOSS PARTY SELECTION** (on), and **AUTOMATIC LEVEL CAPS** (off). **CAPS** in START shows the current cap, enforcement status, and milestone progression. The PC shortcut opens directly to Pokémon storage; the player's item PC is intentionally unavailable. During selection, the first chosen Pokémon leads. B's cancel confirmation falls back to the current healthy party order, truncated to the opponent's party size. Double battles require two selected Pokémon. The Space Center multi battle keeps its vanilla party-selection flow.
 
 ## Manual checks
 
