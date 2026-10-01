@@ -158,7 +158,9 @@ stubModule("src.ui.game3.window", {
   end,
   fill = function() end,
   fixedStdFrame = function() end,
-  print = function() end,
+  print = function(text, x, y)
+    if text == "CAPS" then openedBossRules.title = { x = x, y = y } end
+  end,
   printPx = function() end,
 })
 stubModule("src.core.game3.audio", { playSe = function() end })
@@ -176,6 +178,9 @@ T.eq(openedBossRules and openedBossRules.id, "g1r_emerald_boss_rules",
   "the summary entry pushes a Gen 3 modal layer")
 T.eq(openedBossRules and openedBossRules.screen.draw ~= nil, true,
   "the summary panel supplies a draw callback")
+openedBossRules.screen.draw()
+T.eq(openedBossRules.title and openedBossRules.title.y, 3,
+  "the CAPS title is aligned to the top content row")
 local panelInput = { wasPressed = function() return true end }
 openedBossRules.screen.handleInput(panelInput)
 T.check(forwardedBossRulesInput == panelInput,

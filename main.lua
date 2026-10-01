@@ -311,7 +311,7 @@ return function(mod)
       draw = function()
         Window.fill(Window.template(0, 0, 30, 20), 0, 0, 0, 1)
         Window.fixedStdFrame(Window.template(2, 3, 26, 2))
-        Window.print("CAPS", 4, 4)
+        Window.print("CAPS", 4, 3)
         Window.fixedStdFrame(Window.template(2, 7, 26, 12))
         list:draw()
       end,

@@ -3,6 +3,12 @@
 Format: [keep a changelog](https://keepachangelog.com/en/1.1.0/).
 Version headings match `manifest.json`'s `version`.
 
+## [0.1.3] - 2026-10-01
+
+### Fixed
+
+- Align the CAPS title with the top content row in the summary frame.
+
 ## [0.1.2] - 2026-10-01
 
 ### Fixed
