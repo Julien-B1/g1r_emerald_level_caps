@@ -64,6 +64,23 @@ T.eq(cap(), nil, "the cap clears after Steven")
 
 T.eq(exports.capFromDefeated(function() return false end, { enable_rival = false }), 15,
   "disabling Rival skips its early cap milestones")
+local beforeMaxie = function(boss)
+  return boss.name == "Route 103 Rival" or boss.name == "Roxanne"
+    or boss.name == "Brawly" or boss.name == "Route 110 Rival"
+    or boss.name == "Wally Mauville" or boss.name == "Wattson"
+  end
+T.eq(exports.capFromDefeated(beforeMaxie), 25,
+  "Aqua/Magma caps are enabled by default at Maxie on Mt. Chimney")
+T.eq(exports.capFromDefeated(beforeMaxie, { enable_aqua_magma = false }), 29,
+  "disabling Aqua/Magma skips Maxie and advances to Flannery's cap")
+local aquaMagmaMilestones = {}
+for _, boss in ipairs(exports.bosses) do
+  if boss.group == "aqua_magma" then aquaMagmaMilestones[boss.name] = true end
+end
+T.check(aquaMagmaMilestones["Maxie Mt. Chimney"]
+    and aquaMagmaMilestones["Maxie Magma Hideout"]
+    and aquaMagmaMilestones["Mossdeep Space Center"],
+  "the Aqua/Magma option groups the three team progression milestones")
 local mauvilleProgress = function(boss)
   return boss.name == "Route 103 Rival" or boss.name == "Roxanne"
     or boss.name == "Brawly" or boss.name == "Route 110 Rival"
