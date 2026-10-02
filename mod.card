@@ -13,6 +13,7 @@ return {
       "Four independently configurable features",
       "Options to include or skip Rival, Wally, Steven, and post-game cap milestones",
       "An Aqua/Magma toggle for Maxie and the Space Center cap checkpoints",
+      "Disabled boss groups use neither this mod's caps nor its party-selection menus",
     },
     known = {
       "Unselected held Exp. Share recipients do not receive battle experience",

@@ -22,20 +22,20 @@ local BOSSES = {
   { name = "Route 110 Rival", ids = { 521, 527, 524, 530, 536, 533 }, level = 20, cap = 20, milestone = true, group = "rival" },
   { name = "Wally Mauville", ids = { 656 }, level = 16, cap = 20, milestone = true, group = "wally" },
   { name = "Wattson", ids = { 267 }, level = 24, cap = 24, milestone = true },
-  { name = "Tabitha Mt. Chimney", ids = { 597 }, level = 22, cap = 24 },
+  { name = "Tabitha Mt. Chimney", ids = { 597 }, level = 22, cap = 24, group = "aqua_magma" },
   { name = "Maxie Mt. Chimney", ids = { 602 }, level = 25, cap = 25, milestone = true, group = "aqua_magma" },
   { name = "Flannery", ids = { 268 }, level = 29, cap = 29, milestone = true },
   { name = "Norman", ids = { 269 }, level = 31, cap = 31, milestone = true },
-  { name = "Shelly Weather Institute", ids = { 32 }, level = 28, cap = 31 },
+  { name = "Shelly Weather Institute", ids = { 32 }, level = 28, cap = 31, group = "aqua_magma" },
   { name = "Route 119 Rival", ids = { 522, 528, 525, 531, 537, 534 }, level = 31, cap = 31, group = "rival" },
   { name = "Winona", ids = { 270 }, level = 33, cap = 33, milestone = true },
-  { name = "Tabitha Magma Hideout", ids = { 732 }, level = 33, cap = 33 },
+  { name = "Tabitha Magma Hideout", ids = { 732 }, level = 33, cap = 33, group = "aqua_magma" },
   { name = "Maxie Magma Hideout", ids = { 601 }, level = 39, cap = 39, milestone = true, group = "aqua_magma" },
-  { name = "Matt", ids = { 30 }, level = 34, cap = 39 },
+  { name = "Matt", ids = { 30 }, level = 34, cap = 39, group = "aqua_magma" },
   { name = "Tate and Liza", ids = { 271 }, level = 42, cap = 42, milestone = true, double = true },
   { name = "Mossdeep Space Center", ids = { 734, 514 }, level = 44, cap = 44, milestone = true, multi = true, group = "aqua_magma" },
-  { name = "Shelly Seafloor Cavern", ids = { 33 }, level = 37, cap = 44 },
-  { name = "Archie", ids = { 34 }, level = 43, cap = 44 },
+  { name = "Shelly Seafloor Cavern", ids = { 33 }, level = 37, cap = 44, group = "aqua_magma" },
+  { name = "Archie", ids = { 34 }, level = 43, cap = 44, group = "aqua_magma" },
   { name = "Juan", ids = { 272 }, level = 46, cap = 46, milestone = true },
   { name = "Wally Victory Road", ids = { 519 }, level = 45, cap = 46, milestone = true, group = "wally" },
   { name = "Sidney", ids = { 261 }, level = 49, cap = 49, milestone = true },
@@ -67,14 +67,17 @@ local function capOption(options, key)
   return CAP_OPTION_DEFAULTS[key]
 end
 
-local function capMilestoneEnabled(boss, options)
-  if not boss.milestone then return false end
+local function bossGroupEnabled(boss, options)
   if boss.group == "rival" and not capOption(options, "enable_rival") then return false end
   if boss.group == "wally" and not capOption(options, "enable_wally") then return false end
   if boss.group == "aqua_magma" and not capOption(options, "enable_aqua_magma") then return false end
   if boss.group == "steven" and not capOption(options, "enable_steven") then return false end
   if boss.postgame and not capOption(options, "enable_post") then return false end
   return true
+end
+
+local function capMilestoneEnabled(boss, options)
+  return boss.milestone and bossGroupEnabled(boss, options)
 end
 
 local function capFromDefeated(isDefeated, options)
@@ -149,9 +152,20 @@ return function(mod)
   })
   mod.exports.bosses = BOSSES
   mod.exports.capFromDefeated = capFromDefeated
+  mod.exports.bossGroupEnabled = bossGroupEnabled
   mod.exports.summaryRows = summaryRows
   mod.exports.applyPartyOrder = applyPartyOrder
   mod.exports.restorePartySnapshot = restorePartySnapshot
+
+  local function capOptions()
+    return {
+      enable_rival = mod.options:get("enable_rival"),
+      enable_wally = mod.options:get("enable_wally"),
+      enable_aqua_magma = mod.options:get("enable_aqua_magma"),
+      enable_steven = mod.options:get("enable_steven"),
+      enable_post = mod.options:get("enable_post"),
+    }
+  end
 
   local privateModules, warned = {}, {}
   local function privateModule(name, reason)
@@ -319,13 +333,7 @@ return function(mod)
     if Flags and Space and Space.store then
       rows = summaryRows(function(boss)
         return isDefeated(boss, Flags, Space.store)
-      end, mod.options:get("level_caps"), {
-        enable_rival = mod.options:get("enable_rival"),
-        enable_wally = mod.options:get("enable_wally"),
-        enable_aqua_magma = mod.options:get("enable_aqua_magma"),
-        enable_steven = mod.options:get("enable_steven"),
-        enable_post = mod.options:get("enable_post"),
-      })
+      end, mod.options:get("level_caps"), capOptions())
     else
       rows = {
         { label = "CURRENT LEVEL CAP", right = "UNKNOWN" },
@@ -370,13 +378,7 @@ return function(mod)
   local function currentLevelCap(Flags, store)
     return capFromDefeated(function(boss)
       return isDefeated(boss, Flags, store)
-    end, {
-      enable_rival = mod.options:get("enable_rival"),
-      enable_wally = mod.options:get("enable_wally"),
-      enable_aqua_magma = mod.options:get("enable_aqua_magma"),
-      enable_steven = mod.options:get("enable_steven"),
-      enable_post = mod.options:get("enable_post"),
-    })
+    end, capOptions())
   end
 
   local function reorderedParty(session, order)
@@ -403,7 +405,8 @@ return function(mod)
     local trainerId = tonumber(row.trainer or row[1])
     local battleType = tonumber(row.type) or 0
     local boss = trainerId and BOSS_BY_ID[trainerId]
-    if not boss or battleType == 5 or battleType == 7 then
+    if not boss or not bossGroupEnabled(boss, capOptions())
+        or battleType == 5 or battleType == 7 then
       return next(ctx, op, row)
     end
 
