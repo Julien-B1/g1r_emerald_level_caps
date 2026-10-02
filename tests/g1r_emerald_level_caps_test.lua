@@ -74,13 +74,24 @@ T.eq(exports.capFromDefeated(beforeMaxie), 25,
 T.eq(exports.capFromDefeated(beforeMaxie, { enable_aqua_magma = false }), 29,
   "disabling Aqua/Magma skips Maxie and advances to Flannery's cap")
 local aquaMagmaMilestones = {}
+local aquaMagmaBosses = {}
 for _, boss in ipairs(exports.bosses) do
-  if boss.group == "aqua_magma" then aquaMagmaMilestones[boss.name] = true end
+  if boss.group == "aqua_magma" then
+    aquaMagmaBosses[boss.name] = true
+    if boss.milestone then aquaMagmaMilestones[boss.name] = true end
+  end
 end
 T.check(aquaMagmaMilestones["Maxie Mt. Chimney"]
     and aquaMagmaMilestones["Maxie Magma Hideout"]
     and aquaMagmaMilestones["Mossdeep Space Center"],
   "the Aqua/Magma option groups the three team progression milestones")
+for _, name in ipairs({
+    "Maxie Mt. Chimney", "Tabitha Mt. Chimney", "Shelly Weather Institute",
+    "Tabitha Magma Hideout", "Maxie Magma Hideout", "Matt", "Shelly Seafloor Cavern",
+    "Archie", "Mossdeep Space Center",
+  }) do
+  T.check(aquaMagmaBosses[name], name .. " belongs to the Aqua/Magma group")
+end
 local mauvilleProgress = function(boss)
   return boss.name == "Route 103 Rival" or boss.name == "Roxanne"
     or boss.name == "Brawly" or boss.name == "Route 110 Rival"
@@ -307,6 +318,18 @@ Runtime.call("script.command", function() rematchCalls = rematchCalls + 1 end,
 T.eq(rematchCalls, 1, "a previously defeated boss passes through")
 T.eq(menuOpenCount, 0, "a previously defeated boss never opens the selector")
 store.flags[flags.trainerFlagId(265)] = nil
+
+run.loader.modOptions.g1r_emerald_level_caps.enable_aqua_magma = false
+for _, trainerId in ipairs({ 30, 32, 33, 34, 597, 732, 602, 601, 734, 514 }) do
+  local groupVanillaCalls = 0
+  Runtime.call("script.command", function()
+    groupVanillaCalls = groupVanillaCalls + 1
+  end, scriptContext, "trainerbattle", { trainer = trainerId, type = 0 })
+  T.eq(groupVanillaCalls, 1,
+    "disabled Aqua/Magma group passes trainer " .. trainerId .. " to vanilla")
+end
+T.eq(menuOpenCount, 0, "disabled Aqua/Magma bosses never open the party selector")
+run.loader.modOptions.g1r_emerald_level_caps.enable_aqua_magma = true
 
 local experience = Runtime.call("exp.gain", function() return 250 end, {
   mon = { level = 4, exp = 450, growthRate = 0 },

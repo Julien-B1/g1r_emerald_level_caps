@@ -3,6 +3,13 @@
 Format: [keep a changelog](https://keepachangelog.com/en/1.1.0/).
 Version headings match `manifest.json`'s `version`.
 
+## [0.1.8] - 2026-10-02
+
+### Fixed
+
+- Disabling a boss group now also skips party selection for every encounter in that group.
+- Aqua/Magma now includes all listed Aqua and Magma admins/leaders, not only cap milestones.
+
 ## [0.1.7] - 2026-10-02
 
 ### Added

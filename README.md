@@ -20,7 +20,9 @@ Choose your team for major boss battles, check your current level cap, and acces
 
 - **ENABLE RIVAL CAPS** (on): include Rival milestone battles.
 - **ENABLE WALLY CAPS** (off): include Wally in Mauville and Victory Road as cap checkpoints. Leave this off if you may skip either battle.
-- **ENABLE AQUA/MAGMA CAPS** (on): include Maxie at Mt. Chimney, Maxie at Magma Hideout, and the Mossdeep Space Center multi battle.
+- **ENABLE AQUA/MAGMA CAPS** (on): include Aqua/Magma boss encounters such as Shelly, Matt, Archie, Tabitha, Maxie, and the Mossdeep Space Center multi battle.
 - **ENABLE STEVEN CAP** (on) and **ENABLE POST-GAME CAPS** (on): both must be on for Steven's level-78 cap.
+
+Turning off a boss group removes its encounters from both cap progression and this mod's team-selection menus. The battles themselves still happen normally.
 
 Daycare, trades, and Pokémon received from other characters can exceed a cap. Pokémon left out of a selected boss team do not receive battle EXP, including held Exp. Share recipients.
