@@ -16,18 +16,18 @@ local LEAGUE_MAPS = {
 }
 
 local BOSSES = {
-  { name = "Route 103 Rival", ids = { 520, 526, 523, 529, 535, 532 }, level = 5, cap = 5, milestone = true },
+  { name = "Route 103 Rival", ids = { 520, 526, 523, 529, 535, 532 }, level = 5, cap = 5, milestone = true, group = "rival" },
   { name = "Roxanne", ids = { 265 }, level = 15, cap = 15, milestone = true },
   { name = "Brawly", ids = { 266 }, level = 19, cap = 19, milestone = true },
-  { name = "Route 110 Rival", ids = { 521, 527, 524, 530, 536, 533 }, level = 20, cap = 20, milestone = true },
-  { name = "Wally Mauville", ids = { 656 }, level = 16, cap = 20 },
+  { name = "Route 110 Rival", ids = { 521, 527, 524, 530, 536, 533 }, level = 20, cap = 20, milestone = true, group = "rival" },
+  { name = "Wally Mauville", ids = { 656 }, level = 16, cap = 20, milestone = true, group = "wally" },
   { name = "Wattson", ids = { 267 }, level = 24, cap = 24, milestone = true },
   { name = "Tabitha Mt. Chimney", ids = { 597 }, level = 22, cap = 24 },
   { name = "Maxie Mt. Chimney", ids = { 602 }, level = 25, cap = 25, milestone = true },
   { name = "Flannery", ids = { 268 }, level = 29, cap = 29, milestone = true },
   { name = "Norman", ids = { 269 }, level = 31, cap = 31, milestone = true },
   { name = "Shelly Weather Institute", ids = { 32 }, level = 28, cap = 31 },
-  { name = "Route 119 Rival", ids = { 522, 528, 525, 531, 537, 534 }, level = 31, cap = 31 },
+  { name = "Route 119 Rival", ids = { 522, 528, 525, 531, 537, 534 }, level = 31, cap = 31, group = "rival" },
   { name = "Winona", ids = { 270 }, level = 33, cap = 33, milestone = true },
   { name = "Tabitha Magma Hideout", ids = { 732 }, level = 33, cap = 33 },
   { name = "Maxie Magma Hideout", ids = { 601 }, level = 39, cap = 39, milestone = true },
@@ -37,13 +37,13 @@ local BOSSES = {
   { name = "Shelly Seafloor Cavern", ids = { 33 }, level = 37, cap = 44 },
   { name = "Archie", ids = { 34 }, level = 43, cap = 44 },
   { name = "Juan", ids = { 272 }, level = 46, cap = 46, milestone = true },
-  { name = "Wally Victory Road", ids = { 519 }, level = 45, cap = 46 },
+  { name = "Wally Victory Road", ids = { 519 }, level = 45, cap = 46, milestone = true, group = "wally" },
   { name = "Sidney", ids = { 261 }, level = 49, cap = 49, milestone = true },
   { name = "Phoebe", ids = { 262 }, level = 51, cap = 51, milestone = true },
   { name = "Glacia", ids = { 263 }, level = 53, cap = 53, milestone = true },
   { name = "Drake", ids = { 264 }, level = 55, cap = 55, milestone = true },
   { name = "Wallace", ids = { 335 }, level = 58, cap = 58, milestone = true },
-  { name = "Steven", ids = { 804 }, level = 78, cap = 78, milestone = true },
+  { name = "Steven", ids = { 804 }, level = 78, cap = 78, milestone = true, group = "steven", postgame = true },
 }
 
 local BOSS_BY_ID = {}
@@ -54,17 +54,38 @@ for _, boss in ipairs(BOSSES) do
   end
 end
 
-local function capFromDefeated(isDefeated)
+local CAP_OPTION_DEFAULTS = {
+  enable_rival = true,
+  enable_wally = false,
+  enable_steven = true,
+  enable_post = true,
+}
+
+local function capOption(options, key)
+  if options and options[key] ~= nil then return options[key] == true end
+  return CAP_OPTION_DEFAULTS[key]
+end
+
+local function capMilestoneEnabled(boss, options)
+  if not boss.milestone then return false end
+  if boss.group == "rival" and not capOption(options, "enable_rival") then return false end
+  if boss.group == "wally" and not capOption(options, "enable_wally") then return false end
+  if boss.group == "steven" and not capOption(options, "enable_steven") then return false end
+  if boss.postgame and not capOption(options, "enable_post") then return false end
+  return true
+end
+
+local function capFromDefeated(isDefeated, options)
   for _, boss in ipairs(BOSSES) do
-    if boss.milestone and not isDefeated(boss) then return boss.cap end
+    if capMilestoneEnabled(boss, options) and not isDefeated(boss) then return boss.cap end
   end
   return nil
 end
 
-local function summaryRows(isDefeated, enabled)
+local function summaryRows(isDefeated, enabled, options)
   local nextBoss
   for _, boss in ipairs(BOSSES) do
-    if boss.milestone and not isDefeated(boss) then
+    if capMilestoneEnabled(boss, options) and not isDefeated(boss) then
       nextBoss = boss
       break
     end
@@ -77,8 +98,9 @@ local function summaryRows(isDefeated, enabled)
   }
   for _, boss in ipairs(BOSSES) do
     if boss.milestone then
-      local state = isDefeated(boss) and "CLEARED"
-        or (boss == nextBoss and "NEXT" or "LOCKED")
+      local state = not capMilestoneEnabled(boss, options) and "OFF"
+        or (isDefeated(boss) and "CLEARED"
+          or (boss == nextBoss and "NEXT" or "LOCKED"))
       rows[#rows + 1] = {
         label = boss.name .. " (Lv. " .. boss.cap .. ")",
         right = state,
@@ -117,6 +139,10 @@ return function(mod)
     { key = "disable_pc_league", label = "DISABLE PC IN LEAGUE", type = "toggle", default = true },
     { key = "boss_selection", label = "BOSS PARTY SELECTION", type = "toggle", default = true },
     { key = "level_caps", label = "AUTOMATIC LEVEL CAPS", type = "toggle", default = false },
+    { key = "enable_rival", label = "ENABLE RIVAL CAPS", type = "toggle", default = true },
+    { key = "enable_wally", label = "ENABLE WALLY CAPS", type = "toggle", default = false },
+    { key = "enable_steven", label = "ENABLE STEVEN CAP", type = "toggle", default = true },
+    { key = "enable_post", label = "ENABLE POST-GAME CAPS", type = "toggle", default = true },
   })
   mod.exports.bosses = BOSSES
   mod.exports.capFromDefeated = capFromDefeated
@@ -290,7 +316,12 @@ return function(mod)
     if Flags and Space and Space.store then
       rows = summaryRows(function(boss)
         return isDefeated(boss, Flags, Space.store)
-      end, mod.options:get("level_caps"))
+      end, mod.options:get("level_caps"), {
+        enable_rival = mod.options:get("enable_rival"),
+        enable_wally = mod.options:get("enable_wally"),
+        enable_steven = mod.options:get("enable_steven"),
+        enable_post = mod.options:get("enable_post"),
+      })
     else
       rows = {
         { label = "CURRENT LEVEL CAP", right = "UNKNOWN" },
@@ -335,7 +366,12 @@ return function(mod)
   local function currentLevelCap(Flags, store)
     return capFromDefeated(function(boss)
       return isDefeated(boss, Flags, store)
-    end)
+    end, {
+      enable_rival = mod.options:get("enable_rival"),
+      enable_wally = mod.options:get("enable_wally"),
+      enable_steven = mod.options:get("enable_steven"),
+      enable_post = mod.options:get("enable_post"),
+    })
   end
 
   local function reorderedParty(session, order)
