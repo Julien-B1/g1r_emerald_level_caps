@@ -23,17 +23,17 @@ local BOSSES = {
   { name = "Wally Mauville", ids = { 656 }, level = 16, cap = 20, milestone = true, group = "wally" },
   { name = "Wattson", ids = { 267 }, level = 24, cap = 24, milestone = true },
   { name = "Tabitha Mt. Chimney", ids = { 597 }, level = 22, cap = 24 },
-  { name = "Maxie Mt. Chimney", ids = { 602 }, level = 25, cap = 25, milestone = true },
+  { name = "Maxie Mt. Chimney", ids = { 602 }, level = 25, cap = 25, milestone = true, group = "aqua_magma" },
   { name = "Flannery", ids = { 268 }, level = 29, cap = 29, milestone = true },
   { name = "Norman", ids = { 269 }, level = 31, cap = 31, milestone = true },
   { name = "Shelly Weather Institute", ids = { 32 }, level = 28, cap = 31 },
   { name = "Route 119 Rival", ids = { 522, 528, 525, 531, 537, 534 }, level = 31, cap = 31, group = "rival" },
   { name = "Winona", ids = { 270 }, level = 33, cap = 33, milestone = true },
   { name = "Tabitha Magma Hideout", ids = { 732 }, level = 33, cap = 33 },
-  { name = "Maxie Magma Hideout", ids = { 601 }, level = 39, cap = 39, milestone = true },
+  { name = "Maxie Magma Hideout", ids = { 601 }, level = 39, cap = 39, milestone = true, group = "aqua_magma" },
   { name = "Matt", ids = { 30 }, level = 34, cap = 39 },
   { name = "Tate and Liza", ids = { 271 }, level = 42, cap = 42, milestone = true, double = true },
-  { name = "Mossdeep Space Center", ids = { 734, 514 }, level = 44, cap = 44, milestone = true, multi = true },
+  { name = "Mossdeep Space Center", ids = { 734, 514 }, level = 44, cap = 44, milestone = true, multi = true, group = "aqua_magma" },
   { name = "Shelly Seafloor Cavern", ids = { 33 }, level = 37, cap = 44 },
   { name = "Archie", ids = { 34 }, level = 43, cap = 44 },
   { name = "Juan", ids = { 272 }, level = 46, cap = 46, milestone = true },
@@ -57,6 +57,7 @@ end
 local CAP_OPTION_DEFAULTS = {
   enable_rival = true,
   enable_wally = false,
+  enable_aqua_magma = true,
   enable_steven = true,
   enable_post = true,
 }
@@ -70,6 +71,7 @@ local function capMilestoneEnabled(boss, options)
   if not boss.milestone then return false end
   if boss.group == "rival" and not capOption(options, "enable_rival") then return false end
   if boss.group == "wally" and not capOption(options, "enable_wally") then return false end
+  if boss.group == "aqua_magma" and not capOption(options, "enable_aqua_magma") then return false end
   if boss.group == "steven" and not capOption(options, "enable_steven") then return false end
   if boss.postgame and not capOption(options, "enable_post") then return false end
   return true
@@ -141,6 +143,7 @@ return function(mod)
     { key = "level_caps", label = "AUTOMATIC LEVEL CAPS", type = "toggle", default = false },
     { key = "enable_rival", label = "ENABLE RIVAL CAPS", type = "toggle", default = true },
     { key = "enable_wally", label = "ENABLE WALLY CAPS", type = "toggle", default = false },
+    { key = "enable_aqua_magma", label = "ENABLE AQUA/MAGMA CAPS", type = "toggle", default = true },
     { key = "enable_steven", label = "ENABLE STEVEN CAP", type = "toggle", default = true },
     { key = "enable_post", label = "ENABLE POST-GAME CAPS", type = "toggle", default = true },
   })
@@ -319,6 +322,7 @@ return function(mod)
       end, mod.options:get("level_caps"), {
         enable_rival = mod.options:get("enable_rival"),
         enable_wally = mod.options:get("enable_wally"),
+        enable_aqua_magma = mod.options:get("enable_aqua_magma"),
         enable_steven = mod.options:get("enable_steven"),
         enable_post = mod.options:get("enable_post"),
       })
@@ -369,6 +373,7 @@ return function(mod)
     end, {
       enable_rival = mod.options:get("enable_rival"),
       enable_wally = mod.options:get("enable_wally"),
+      enable_aqua_magma = mod.options:get("enable_aqua_magma"),
       enable_steven = mod.options:get("enable_steven"),
       enable_post = mod.options:get("enable_post"),
     })
