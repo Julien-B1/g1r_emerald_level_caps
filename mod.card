@@ -11,6 +11,7 @@ return {
     },
     added = {
       "Four independently configurable features",
+      "Options to include or skip Rival, Wally, Steven, and post-game cap milestones",
     },
     known = {
       "Unselected held Exp. Share recipients do not receive battle experience",

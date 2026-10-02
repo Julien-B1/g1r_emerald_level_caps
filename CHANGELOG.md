@@ -3,6 +3,13 @@
 Format: [keep a changelog](https://keepachangelog.com/en/1.1.0/).
 Version headings match `manifest.json`'s `version`.
 
+## [0.1.6] - 2026-10-02
+
+### Added
+
+- Independent Rival, Wally, Steven, and post-game cap options.
+- Optional Wally checkpoints default to off so skipped battles cannot hold progression.
+
 ## [0.1.5] - 2026-10-01
 
 ### Fixed

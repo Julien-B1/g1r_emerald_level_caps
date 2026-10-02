@@ -45,8 +45,8 @@ T.eq(summary[2].right, "OFF", "the summary panel reports whether caps are enforc
 T.eq(summary[3].right, "Roxanne", "the summary panel identifies the next milestone")
 
 local beaten = {}
-local function cap()
-  return exports.capFromDefeated(function(boss) return beaten[boss.name] == true end)
+local function cap(options)
+  return exports.capFromDefeated(function(boss) return beaten[boss.name] == true end, options)
 end
 local expectedCaps = {
   5, 15, 19, 20, 20, 24, 24, 25, 29, 31, 31, 31, 33, 33,
@@ -55,11 +55,36 @@ local expectedCaps = {
 for index, boss in ipairs(exports.bosses) do
   T.eq(boss.cap, expectedCaps[index], "boss row " .. index .. " has the planned effective cap")
   if boss.milestone then
-    T.eq(cap(), boss.cap, "progression reaches milestone cap " .. boss.cap)
+    T.eq(cap({ enable_wally = true }), boss.cap,
+      "progression reaches milestone cap " .. boss.cap)
   end
   beaten[boss.name] = true
 end
 T.eq(cap(), nil, "the cap clears after Steven")
+
+T.eq(exports.capFromDefeated(function() return false end, { enable_rival = false }), 15,
+  "disabling Rival skips its early cap milestones")
+local mauvilleProgress = function(boss)
+  return boss.name == "Route 103 Rival" or boss.name == "Roxanne"
+    or boss.name == "Brawly" or boss.name == "Route 110 Rival"
+end
+T.eq(exports.capFromDefeated(mauvilleProgress), 24,
+  "Wally caps are off by default, so optional Mauville Wally cannot stall progression")
+T.eq(exports.capFromDefeated(mauvilleProgress, { enable_wally = true }), 20,
+  "enabling Wally makes the Mauville battle an optional cap checkpoint")
+local mauvilleWallyBeaten = function(boss)
+  return mauvilleProgress(boss) or boss.name == "Wally Mauville"
+end
+T.eq(exports.capFromDefeated(mauvilleWallyBeaten, { enable_wally = true }), 24,
+  "beating Wally advances to Wattson when Wally caps are enabled")
+
+local endgameProgress = function(boss) return boss.name ~= "Steven" end
+T.eq(exports.capFromDefeated(endgameProgress), 78,
+  "Steven and post-game caps are enabled by default")
+T.eq(exports.capFromDefeated(endgameProgress, { enable_steven = false }), nil,
+  "disabling Steven skips the post-game cap milestone")
+T.eq(exports.capFromDefeated(endgameProgress, { enable_post = false }), nil,
+  "disabling post-game caps suppresses the Steven cap")
 
 local first = { hp = 10, level = 5 }
 local second = { hp = 20, level = 7 }
